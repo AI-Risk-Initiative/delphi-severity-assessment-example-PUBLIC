@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Risk Severity Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #A32035;
+            margin-bottom: 10px;
+        }
+        
+        .question-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        #probVizContainer {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        #probBarChart {
+            height: 280px;
+            background: #f0f8ff;
+            border: 2px solid #999;
+            border-radius: 4px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-evenly;
+            padding: 25px 20px 20px 10px;
+            position: relative;
+        }
+        
+        .bar-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .percent-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            min-height: 20px;
+        }
+        
+        .bar {
+            width: 60px;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease;
+            min-height: 3px;
+        }
+        
+        #totalDisplay {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 6px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .input-item {
+            text-align: center;
+        }
+        
+        .input-item label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .input-item input {
+            width: 100%;
+            padding: 8px;
+            font-size: 16px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .input-item input:focus {
+            outline: none;
+            border-color: #A32035;
+        }
+        
+        .harm-examples {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .harm-box {
+            font-size: 12px;
+            line-height: 1.3;
+            color: #666;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .clarification {
+            margin: 30px 0;
+        }
+        
+        details {
+            background: transparent;
+            border: none;
+        }
+        
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #A32035;
+            font-size: 18px;
+            text-decoration: underline;
+            list-style: none;
+            user-select: none;
+        }
+        
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        summary::before {
+            content: '▶ ';
+            font-size: 16px;
+        }
+        
+        details[open] summary::before {
+            content: '▼ ';
+        }
+        
+        .details-content {
+            background: white;
+            margin-top: 10px;
+            border: 2px solid #A32035;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .assessment-summary {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 3px;
+            margin: 20px 0 30px 0;
+            border-left: 4px solid #999;
+            border-top: 2px solid #999;
+            border-bottom: 2px solid #999;
+            border-right: 4px solid #999;
+        }
+        
+        .assessment-highlight {
+            background-color: #f8f8f8;
+            padding: 12px;
+            border-left: 4px solid #A32035;
+            margin-bottom: 18px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+            font-size: 0.9em;
+        }
+        
+        .stat-value {
+            color: #A32035;
+            font-weight: bold;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 700px;
+            border: none;
+            border-top: 2px solid #A32035;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #856404; font-size: 20px;">⚠️ Example Tool - For Demonstration Only</h2>
+        </div>
+        
+        <h1>AI Risk Severity Assessment</h1>
+        <div class="question-text">
+            <p>Considering <strong>Business as Usual</strong> assumptions (no significant changes to current AI development or governance), what is the likelihood that <strong>this AI risk</strong> will result in each level of harm over the next 5 years?</p>
+            <p>Please distribute 100 percentage points across the five severity levels below:</p>
+        </div>
+        
+        <div id="probVizContainer">
+            <div id="probBarChart"></div>
+            <div id="totalDisplay">ENTER YOUR PROBABILITIES IN THE BOXES BELOW</div>
+        </div>
+        
+        <div class="input-grid">
+            <div class="input-item">
+                <label>Negligible</label>
+                <input type="number" id="negligible" min="0" max="100" value="0">
+            </div>
+            <div class="input-item">
+                <label>Minor</label>
+                <input type="number" id="minor" min="0" max="100" value="0">
+            </div>
+            <div class="input-item">
+                <label>Substantial</label>
+                <input type="number" id="substantial" min="0" max="100" value="0">
+            </div>
+            <div class="input-item">
+                <label>Severe</label>
+                <input type="number" id="severe" min="0" max="100" value="0">
+            </div>
+            <div class="input-item">
+                <label>Catastrophic</label>
+                <input type="number" id="catastrophic" min="0" max="100" value="0">
+            </div>
+        </div>
+        
+        <div class="harm-examples">
+            <div class="harm-box">
+                <b>Physical Harm:</b> None - minor injuries<br>
+                <b>Financial Loss:</b> &lt;$10K<br>
+                <b>Intangible Harm:</b> Minimal impact
+            </div>
+            <div class="harm-box">
+                <b>Physical Harm:</b> Moderate - severe injuries, no loss of life<br>
+                <b>Financial Loss:</b> $10K-$1M<br>
+                <b>Intangible Harm:</b> Limited scope/reversible
+            </div>
+            <div class="harm-box">
+                <b>Physical Harm:</b> Loss of life (1-99 deaths)<br>
+                <b>Financial Loss:</b> $1M-$100M<br>
+                <b>Intangible Harm:</b> Widespread/lasting impact
+            </div>
+            <div class="harm-box">
+                <b>Physical Harm:</b> Large-scale loss of life (&lt;1M deaths)<br>
+                <b>Financial Loss:</b> $100M-$10B<br>
+                <b>Intangible Harm:</b> Systemic/irreversible
+            </div>
+            <div class="harm-box">
+                <b>Physical Harm:</b> &gt;1M deaths or existential threat to humanity<br>
+                <b>Financial Loss:</b> $100B-10T+<br>
+                <b>Intangible Harm:</b> Civilizational impact
+            </div>
+        </div>
+        
+
+        
+        <div id="assessmentSummary" class="assessment-summary" style="display: none;">
+            <h3 style="color: #A32035; margin-top: 0;">Your Assessment</h3>
+            <div class="assessment-highlight">
+                <p id="summaryText" style="margin: 0; line-height: 1.5;"></p>
+            </div>
+            <h3 style="color: #A32035; font-size: 1.1em;">Individual likelihood (exactly this severe)</h3>
+            <div class="stats-grid" id="individualStats"></div>
+            <h3 style="color: #A32035; font-size: 1.1em;">Cumulative likelihood (at most this severe)</h3>
+            <div class="stats-grid" id="cumulativeStats"></div>
+        </div>
+    </div>
+    
+    <script>
+        const colors = ['#28a745', '#6c757d', '#ffc107', '#fd7e14', '#dc3545'];
+        const levels = ['negligible', 'minor', 'substantial', 'severe', 'catastrophic'];
+        const levelNames = ['Negligible', 'Minor', 'Substantial', 'Severe', 'Catastrophic'];
+        
+        function createChart() {
+            const chart = document.getElementById('probBarChart');
+            chart.innerHTML = '';
+            
+            levels.forEach((level, i) => {
+                const column = document.createElement('div');
+                column.className = 'bar-column';
+                
+                const percentLabel = document.createElement('div');
+                percentLabel.className = 'percent-label';
+                percentLabel.id = `percent-${level}`;
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.id = `bar-${level}`;
+                bar.style.backgroundColor = colors[i];
+                bar.style.height = '0px';
+                
+                column.appendChild(percentLabel);
+                column.appendChild(bar);
+                chart.appendChild(column);
+            });
+        }
+        
+        function updateVisualization() {
+            const values = levels.map(level => 
+                parseInt(document.getElementById(level).value) || 0
+            );
+            const total = values.reduce((a, b) => a + b, 0);
+            
+            const totalDisplay = document.getElementById('totalDisplay');
+            
+            if (total > 100) {
+                totalDisplay.innerHTML = '⚠ Total exceeds 100%';
+                totalDisplay.style.backgroundColor = '#f8d7da';
+                totalDisplay.style.borderColor = '#dc3545';
+                totalDisplay.style.color = '#721c24';
+                
+                values.forEach((val, i) => {
+                    document.getElementById(`bar-${levels[i]}`).style.height = '0px';
+                    document.getElementById(`percent-${levels[i]}`).textContent = '';
+                });
+                
+                document.getElementById('assessmentSummary').style.display = 'none';
+                return;
+            }
+            
+            if (Math.abs(total - 100) < 0.01) {
+                totalDisplay.innerHTML = '✓ Total: ' + total.toFixed(1) + '%';
+                totalDisplay.style.backgroundColor = '#d4edda';
+                totalDisplay.style.borderColor = '#28a745';
+                totalDisplay.style.color = '#155724';
+            } else if (total > 0) {
+                totalDisplay.textContent = 'Total: ' + total.toFixed(1) + '%';
+                totalDisplay.style.backgroundColor = '#f8d7da';
+                totalDisplay.style.borderColor = '#dc3545';
+                totalDisplay.style.color = '#721c24';
+            } else {
+                totalDisplay.innerHTML = '<strong>ENTER YOUR PROBABILITIES IN THE BOXES BELOW</strong>';
+                totalDisplay.style.backgroundColor = '#fff3cd';
+                totalDisplay.style.borderColor = '#ffc107';
+                totalDisplay.style.color = '#856404';
+            }
+            
+            values.forEach((val, i) => {
+                const bar = document.getElementById(`bar-${levels[i]}`);
+                const label = document.getElementById(`percent-${levels[i]}`);
+                
+                if (val > 100 || val < 0) {
+                    bar.style.height = '0px';
+                    label.textContent = '';
+                } else if (val > 0) {
+                    bar.style.height = Math.max(val * 2.2, 8) + 'px';
+                    label.textContent = val + '%';
+                } else {
+                    bar.style.height = '0px';
+                    label.textContent = '';
+                }
+            });
+            
+            updateAssessmentSummary(values, total);
+        }
+        
+        function updateAssessmentSummary(values, total) {
+            const summary = document.getElementById('assessmentSummary');
+            
+            if (total === 0 || total > 100) {
+                summary.style.display = 'none';
+                return;
+            }
+            
+            summary.style.display = 'block';
+            
+            const maxIndex = values.indexOf(Math.max(...values));
+            const mostLikely = levelNames[maxIndex].toLowerCase();
+            const mostLikelyValue = values[maxIndex];
+            
+            const cumulative = [
+                values[4],
+                values[4] + values[3],
+                values[4] + values[3] + values[2],
+                values[4] + values[3] + values[2] + values[1],
+                total
+            ];
+            
+            const summaryText = document.getElementById('summaryText');
+            summaryText.innerHTML = `Under <strong>Business as Usual</strong> assumptions, you think that <strong>this risk</strong> is most likely to result in <strong>${mostLikely} harm</strong> (${mostLikelyValue}% likelihood) over the next 5 years. You think there's a <strong>${cumulative[2]}% likelihood</strong> this risk results in substantial harm or less.`;
+            
+            const individualStats = document.getElementById('individualStats');
+            individualStats.innerHTML = levelNames.map((name, i) => 
+                `<div><span class="stat-value">${values[i]}%</span> ${name} harm</div>`
+            ).join('');
+            
+            const cumulativeStats = document.getElementById('cumulativeStats');
+            cumulativeStats.innerHTML = [
+                `<div><span class="stat-value">${cumulative[4]}%</span> Negligible harm</div>`,
+                `<div><span class="stat-value">${cumulative[3]}%</span> Minor harm or less</div>`,
+                `<div><span class="stat-value">${cumulative[2]}%</span> Substantial harm or less</div>`,
+                `<div><span class="stat-value">${cumulative[1]}%</span> Severe harm or less</div>`,
+                `<div><span class="stat-value">${cumulative[0]}%</span> Catastrophic harm or less</div>`
+            ].join('');
+        }
+        
+        createChart();
+        
+        levels.forEach(level => {
+            document.getElementById(level).addEventListener('input', updateVisualization);
+        });
+        
+        updateVisualization();
+    </script>
+</body>
+</html>
